@@ -4,6 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config';
 import { PrismaModule } from './database';
+import { AuthModule } from './modules/auth';
+import { UsersModule } from './modules/users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards';
 
 @Module({
   imports: [
@@ -11,7 +15,10 @@ import { PrismaModule } from './database';
       isGlobal: true,
       load: [databaseConfig],
     }),
+
     PrismaModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

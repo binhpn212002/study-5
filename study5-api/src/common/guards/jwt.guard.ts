@@ -1,12 +1,18 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { IS_PUBLIC_KEY } from '../decorators/is-public.decorator';
-import { UnauthorizedException } from '../exceptions/auth.exception';
-import { ErrorCode } from '../constants';
 import type { JwtPayload } from '../../modules/auth/jwt.service';
-
+import { ErrorCode } from '../constants';
+import { IS_PUBLIC_KEY } from '../decorators/is-public.decorator';
+import { ROLES_KEY } from '../decorators/roles.decorator';
+import { RoleEnum } from '../enums';
+import { UnauthorizedException } from '../exceptions/auth.exception';
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
@@ -36,6 +42,13 @@ export class JwtAuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
+      const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(
+        ROLES_KEY,
+        [context.getHandler(), context.getClass()],
+      );
+      if (requiredRoles && !requiredRoles.includes(payload.role as RoleEnum)) {
+        throw new ForbiddenException(ErrorCode.FORBIDDEN);
+      }
       request['user'] = payload;
     } catch {
       throw new UnauthorizedException(ErrorCode.TOKEN_INVALID);

@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { JwtAuthGuard } from './common/guards/jwt.guard';
 import { databaseConfig } from './config';
 import { PrismaModule } from './database';
 import { AuthModule } from './modules/auth';
 import { UsersModule } from './modules/users/users.module';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './common/guards';
 
 @Module({
   imports: [
@@ -15,12 +15,17 @@ import { JwtAuthGuard } from './common/guards';
       isGlobal: true,
       load: [databaseConfig],
     }),
-
     PrismaModule,
     AuthModule,
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

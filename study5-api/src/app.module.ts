@@ -7,7 +7,7 @@ import { JwtAuthGuard } from './common/guards/jwt.guard';
 import { databaseConfig } from './config';
 import { PrismaModule } from './database';
 import { AuthModule } from './modules/auth';
-import { UsersModule } from './modules/users/users.module';
+import { UserModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { UsersModule } from './modules/users/users.module';
     }),
     PrismaModule,
     AuthModule,
-    UsersModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [

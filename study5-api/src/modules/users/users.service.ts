@@ -1,25 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { UsersRepository } from './users.repository';
+import { UserRepository } from './users.repository';
 
 @Injectable()
-export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+export class UserService {
+  constructor(private readonly userRepository: UserRepository) {}
 
   async findById(id: number) {
-    return this.usersRepository.findById(id);
+    return this.userRepository.findById(id);
   }
 
   async findByEmail(email: string) {
-    return this.usersRepository.findByEmail(email);
+    return this.userRepository.findByEmail(email);
   }
 
   async findByUsername(username: string) {
-    return this.usersRepository.findByUsername(username);
+    return this.userRepository.findByUsername(username);
   }
 
   async findByEmailOrUsername(email: string, username: string) {
-    return this.usersRepository.findOne({
+    return this.userRepository.findOne({
       where: {
         OR: [{ email }, { username }],
       },
@@ -27,22 +27,22 @@ export class UsersService {
   }
 
   async create(data: Prisma.UserCreateInput) {
-    return this.usersRepository.create(data);
+    return this.userRepository.create(data);
   }
 
   async update(id: number, data: Prisma.UserUpdateInput) {
-    return this.usersRepository.update(id, data);
+    return this.userRepository.update(id, data);
   }
 
   async delete(id: number) {
-    return this.usersRepository.delete(id);
+    return this.userRepository.delete(id);
   }
 
   async exists(where: Prisma.UserWhereInput): Promise<boolean> {
-    return this.usersRepository.exists(where);
+    return this.userRepository.exists(where);
   }
 
   async paginate(page: number, limit: number, where?: Prisma.UserWhereInput) {
-    return this.usersRepository.paginate(page, limit, { where });
+    return this.userRepository.paginate(page, limit, { where });
   }
 }

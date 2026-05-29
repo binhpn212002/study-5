@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { prismaClient } from '../client';
 
 export interface IFindManyOptions<T = unknown> {

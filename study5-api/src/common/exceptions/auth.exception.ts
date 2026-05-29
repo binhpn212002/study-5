@@ -1,5 +1,5 @@
+import { ERROR_MESSAGES, ERROR_STATUS_CODES, ErrorCode } from '../constants';
 import { AppException } from './base.exception';
-import { ErrorCode, ERROR_MESSAGES, ERROR_STATUS_CODES } from '../constants';
 
 export class UnauthorizedException extends AppException {
   constructor(code: ErrorCode = ErrorCode.INVALID_CREDENTIALS) {

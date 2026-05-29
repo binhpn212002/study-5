@@ -9,7 +9,7 @@ import {
   UserNotFoundException,
 } from '../../common/exceptions';
 import { UserDto } from '../users/dtos/user.dto';
-import { UsersService } from '../users/users.service';
+import { UserService } from '../users/users.service';
 import { LoginDto, LoginResponseDto } from './dtos';
 import { RegisterDto } from './dtos/register.dto';
 import { JwtAuthService } from './jwt.service';
@@ -18,7 +18,7 @@ import { JwtAuthService } from './jwt.service';
 export class AuthService {
   constructor(
     private readonly jwtService: JwtAuthService,
-    private readonly usersService: UsersService,
+    private readonly usersService: UserService,
   ) {}
 
   async login(body: LoginDto): Promise<LoginResponseDto> {

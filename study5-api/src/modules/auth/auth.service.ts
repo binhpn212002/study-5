@@ -1,22 +1,20 @@
-import {
-  ConflictException,
-  Controller,
-  NotFoundException,
-} from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { ErrorCode } from '../../common/constants';
 import { RoleEnum } from '../../common/enums';
-import { UnauthorizedException } from '../../common/exceptions/auth.exception';
+import {
+  UnauthorizedException,
+  UserAlreadyExistsException,
+  UserNotFoundException,
+} from '../../common/exceptions';
 import { UserDto } from '../users/dtos/user.dto';
 import { UsersService } from '../users/users.service';
 import { LoginDto, LoginResponseDto } from './dtos';
 import { RegisterDto } from './dtos/register.dto';
 import { JwtAuthService } from './jwt.service';
 
-@ApiTags('Auth')
-@Controller('auth')
+@Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtAuthService,
@@ -50,7 +48,7 @@ export class AuthService {
       username,
     );
     if (existingUser) {
-      throw new ConflictException(ErrorCode.USER_ALREADY_EXISTS);
+      throw new UserAlreadyExistsException(ErrorCode.USER_ALREADY_EXISTS);
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await this.usersService.create({
@@ -63,7 +61,7 @@ export class AuthService {
   async getMe(id: number): Promise<UserDto> {
     const user = await this.usersService.findById(id);
     if (!user) {
-      throw new NotFoundException(ErrorCode.USER_NOT_FOUND);
+      throw new UserNotFoundException(ErrorCode.USER_NOT_FOUND);
     }
     return plainToInstance(UserDto, user, { excludeExtraneousValues: true });
   }

@@ -1,31 +1,57 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { JwtAuthGuard } from './common/guards/jwt.guard';
-import { databaseConfig } from './config';
-import { PrismaModule } from './database';
-import { AuthModule } from './modules/auth';
-import { UserModule } from './modules/users/users.module';
+import appConfig from "./config/app.config";
+import databaseConfig from "./config/database.config";
+import firebaseConfig from "./config/firebase.config";
+import internalConfig from "./config/internal.config";
+import jwtConfig from "./config/jwt.config";
+import lowStockAlertConfig from "./config/low-stock-alert.config";
+import redisConfig from "./config/redis.config";
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig],
+      load: [
+        appConfig,
+        databaseConfig,
+        redisConfig,
+        jwtConfig,
+        firebaseConfig,
+        internalConfig,
+        lowStockAlertConfig,
+      ],
+      envFilePath: [".env.local", ".env"],
     }),
-    PrismaModule,
-    AuthModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const env = configService.get<string>("app.env");
+        return {
+          type: "postgres",
+          host: configService.get<string>("database.host"),
+          port: configService.get<number>("database.port"),
+          username: configService.get<string>("database.username"),
+          password: configService.get<string>("database.password"),
+          database: configService.get<string>("database.database"),
+          autoLoadEntities: true,
+          synchronize: env === "development",
+          logging: env === "development",
+        };
+      },
+    }),
+
     UserModule,
+    AuthModule
+    // RedisModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}

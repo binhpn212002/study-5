@@ -1,20 +1,27 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from '../users/users.module';
+import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthService } from './jwt.service';
+import { AuthService } from './services/auth.service';
+import { FirebaseAdminService } from './services/firebase-admin.service';
 
 @Module({
   imports: [
     UserModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default-secret',
-      signOptions: { expiresIn: '7d' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('jwt.secret'),
+        signOptions: {
+          expiresIn: config.get<string>('jwt.expiresIn'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController],
-  providers: [JwtAuthService, AuthService],
-  exports: [JwtAuthService, JwtModule],
+  providers: [AuthService, FirebaseAdminService, ],
+  exports: [AuthService],
 })
 export class AuthModule {}

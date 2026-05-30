@@ -106,6 +106,10 @@ export const ErrorCode = {
   VOCABULARY_NOT_FOUND: 'VOCABULARY_NOT_FOUND',
   VOCABULARY_CHINESE_DUPLICATE: 'VOCABULARY_CHINESE_DUPLICATE',
   VOCABULARY_INVALID_HSK_LEVEL: 'VOCABULARY_INVALID_HSK_LEVEL',
+
+  // Sentence
+  SENTENCE_NOT_FOUND: 'SENTENCE_NOT_FOUND',
+  SENTENCE_DUPLICATE: 'SENTENCE_DUPLICATE',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -235,4 +239,8 @@ export const ERROR_MESSAGE: Record<ErrorCodeValue, string> = {
   [ErrorCode.VOCABULARY_NOT_FOUND]: 'Không tìm thấy từ vựng',
   [ErrorCode.VOCABULARY_CHINESE_DUPLICATE]: 'Từ tiếng Trung đã tồn tại',
   [ErrorCode.VOCABULARY_INVALID_HSK_LEVEL]: 'Cấp độ HSK không hợp lệ',
+
+  // Sentence messages
+  [ErrorCode.SENTENCE_NOT_FOUND]: 'Không tìm thấy câu dài',
+  [ErrorCode.SENTENCE_DUPLICATE]: 'Câu dài đã tồn tại trong cùng cấp độ',
 };

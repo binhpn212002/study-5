@@ -16,6 +16,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FirebaseAdminService } from "./modules/auth/services/firebase-admin.service";
 import { UserModule } from './modules/user/user.module';
 import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
+import { SentenceModule } from './modules/sentence/sentence.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
     UserModule,
     AuthModule,
     VocabularyModule,
+    SentenceModule,
     // RedisModule,
   ],
   controllers: [AppController],

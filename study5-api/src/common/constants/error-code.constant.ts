@@ -110,6 +110,10 @@ export const ErrorCode = {
   // Sentence
   SENTENCE_NOT_FOUND: 'SENTENCE_NOT_FOUND',
   SENTENCE_DUPLICATE: 'SENTENCE_DUPLICATE',
+
+  // UserVocabulary
+  USER_VOCAB_NOT_FOUND: 'USER_VOCAB_NOT_FOUND',
+  INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -243,4 +247,8 @@ export const ERROR_MESSAGE: Record<ErrorCodeValue, string> = {
   // Sentence messages
   [ErrorCode.SENTENCE_NOT_FOUND]: 'Không tìm thấy câu dài',
   [ErrorCode.SENTENCE_DUPLICATE]: 'Câu dài đã tồn tại trong cùng cấp độ',
+
+  // UserVocabulary messages
+  [ErrorCode.USER_VOCAB_NOT_FOUND]: 'Không tìm thấy từ vựng đã lưu',
+  [ErrorCode.INVALID_STATUS_TRANSITION]: 'Chuyển trạng thái không hợp lệ',
 };

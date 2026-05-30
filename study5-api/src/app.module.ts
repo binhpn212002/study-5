@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import appConfig from "./config/app.config";
 import databaseConfig from "./config/database.config";
 import firebaseConfig from "./config/firebase.config";
@@ -11,6 +13,7 @@ import jwtConfig from "./config/jwt.config";
 import lowStockAlertConfig from "./config/low-stock-alert.config";
 import redisConfig from "./config/redis.config";
 import { AuthModule } from './modules/auth/auth.module';
+import { FirebaseAdminService } from "./modules/auth/services/firebase-admin.service";
 import { UserModule } from './modules/user/user.module';
 
 @Module({
@@ -48,10 +51,14 @@ import { UserModule } from './modules/user/user.module';
     }),
 
     UserModule,
-    AuthModule
+    AuthModule,
     // RedisModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    FirebaseAdminService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

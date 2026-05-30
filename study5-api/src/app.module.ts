@@ -15,6 +15,7 @@ import redisConfig from "./config/redis.config";
 import { AuthModule } from './modules/auth/auth.module';
 import { FirebaseAdminService } from "./modules/auth/services/firebase-admin.service";
 import { UserModule } from './modules/user/user.module';
+import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { UserModule } from './modules/user/user.module';
 
     UserModule,
     AuthModule,
+    VocabularyModule,
     // RedisModule,
   ],
   controllers: [AppController],

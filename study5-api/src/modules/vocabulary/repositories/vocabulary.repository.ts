@@ -1,0 +1,112 @@
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, SelectQueryBuilder } from "typeorm";
+import { HskLevel } from "../../../common/constants/vocabulary.constant";
+import { PageOptionDto, SortOrder } from "../../../common/dto/page-option.dto";
+import { BaseRepository } from "../../../common/repositories/base.repository";
+import { Vocabulary } from "../../../database/entities/vocabulary.entity";
+
+export interface VocabularyQueryOptions {
+  q?: string;
+  level?: HskLevel;
+  fromDate?: string;
+  toDate?: string;
+}
+
+@Injectable()
+export class VocabularyRepository extends BaseRepository<Vocabulary> {
+  constructor(
+    @InjectRepository(Vocabulary)
+    repository: Repository<Vocabulary>,
+  ) {
+    super(repository);
+  }
+
+  async findAllWithPagination(
+    pageOptions: PageOptionDto,
+    options?: VocabularyQueryOptions,
+  ): Promise<{ items: Vocabulary[]; total: number }> {
+    const qb = this.createQueryBuilder("vocabulary");
+
+    this.applyFilters(qb, options);
+
+    const sortColumn = (pageOptions.sort as string) || "created_at";
+    const sortDirection = pageOptions.sort === SortOrder.ASC ? "ASC" : "DESC";
+    qb.orderBy(`vocabulary.${sortColumn}`, sortDirection);
+
+    const [items, total] = await qb
+      .skip(pageOptions.skip)
+      .take(pageOptions.limit)
+      .getManyAndCount();
+
+    return { items, total };
+  }
+
+  async findById(id: string): Promise<Vocabulary | null> {
+    return this.findOne({
+      where: { id } as any,
+    });
+  }
+
+  async findByChinese(chinese: string): Promise<Vocabulary | null> {
+    return this.findOneBy({ chinese } as any);
+  }
+
+  async findByLevel(level: HskLevel): Promise<Vocabulary[]> {
+    return this.find({
+      where: { level } as any,
+      order: { chinese: "ASC" },
+    });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.repository.softDelete(id);
+  }
+
+  async countByLevel(): Promise<{ level: HskLevel; count: number }[]> {
+    const result = await this.repository
+      .createQueryBuilder("vocabulary")
+      .select("vocabulary.level", "level")
+      .addSelect("COUNT(*)", "count")
+      .groupBy("vocabulary.level")
+      .getRawMany();
+
+    return result.map((r) => ({
+      level: r.level as HskLevel,
+      count: parseInt(r.count, 10),
+    }));
+  }
+
+  private applyFilters(
+    qb: SelectQueryBuilder<Vocabulary>,
+    options?: VocabularyQueryOptions,
+  ): void {
+    if (!options) return;
+
+    qb.andWhere("vocabulary.deleted_at IS NULL");
+
+    if (options.q) {
+      const searchTerm = `%${options.q}%`;
+      qb.andWhere(
+        "(vocabulary.chinese ILIKE :q OR vocabulary.pinyin ILIKE :q OR vocabulary.vietnameseMeaning ILIKE :q)",
+        { q: searchTerm },
+      );
+    }
+
+    if (options.level) {
+      qb.andWhere("vocabulary.level = :level", { level: options.level });
+    }
+
+    if (options.fromDate) {
+      qb.andWhere("vocabulary.created_at >= :fromDate", {
+        fromDate: options.fromDate,
+      });
+    }
+
+    if (options.toDate) {
+      qb.andWhere("vocabulary.created_at <= :toDate", {
+        toDate: options.toDate,
+      });
+    }
+  }
+}

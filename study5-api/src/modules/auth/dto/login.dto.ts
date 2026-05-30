@@ -10,18 +10,19 @@ import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 export class LoginDto {
   @ApiProperty({
     description:
-      'Tên đăng nhập trong WMS hoặc email đăng nhập Firebase (nếu là email)',
-    example: 'admin@example.com',
+      "Tên đăng nhập trong WMS hoặc email đăng nhập Firebase (nếu là email)",
+    example: "admin@gmail.com",
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
   @MaxLength(128)
   username: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: "Mật khẩu đăng nhập",
+    example: "123456",
+  })
   @IsString()
   @IsNotEmpty()
   @MinLength(1)

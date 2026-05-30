@@ -101,6 +101,11 @@ export const ErrorCode = {
   USER_FIREBASE_ID_DUPLICATE: 'USER_FIREBASE_ID_DUPLICATE',
   AUTH_INVALID_CREDENTIALS: 'AUTH_INVALID_CREDENTIALS',
   AUTH_FIREBASE_NOT_CONFIGURED: 'AUTH_FIREBASE_NOT_CONFIGURED',
+
+  // Vocabulary
+  VOCABULARY_NOT_FOUND: 'VOCABULARY_NOT_FOUND',
+  VOCABULARY_CHINESE_DUPLICATE: 'VOCABULARY_CHINESE_DUPLICATE',
+  VOCABULARY_INVALID_HSK_LEVEL: 'VOCABULARY_INVALID_HSK_LEVEL',
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -225,4 +230,9 @@ export const ERROR_MESSAGE: Record<ErrorCodeValue, string> = {
     'Token không hợp lệ hoặc tài khoản chưa được đăng ký',
   [ErrorCode.AUTH_FIREBASE_NOT_CONFIGURED]:
     'Chưa cấu hình Firebase Admin (FIREBASE_SERVICE_ACCOUNT_JSON)',
+
+  // Vocabulary messages
+  [ErrorCode.VOCABULARY_NOT_FOUND]: 'Không tìm thấy từ vựng',
+  [ErrorCode.VOCABULARY_CHINESE_DUPLICATE]: 'Từ tiếng Trung đã tồn tại',
+  [ErrorCode.VOCABULARY_INVALID_HSK_LEVEL]: 'Cấp độ HSK không hợp lệ',
 };

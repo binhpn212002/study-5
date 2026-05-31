@@ -30,10 +30,13 @@ export class JwtAuthGuard {
     if (isPublic) {
       return true;
     }
-    const roles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+    const role = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]); 
+    if (!role) {
+      return true;
+    }
 
     const request = context.switchToHttp().getRequest<{
       headers?: { authorization?: string };

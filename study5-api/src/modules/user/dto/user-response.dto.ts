@@ -26,10 +26,10 @@ export class UserResponseDto {
 
   @ApiProperty({ enum: UserStatus })
   status: UserStatus;
-
+  @ApiProperty({ enum: UserStatus })
+  isActive: boolean;
   @ApiProperty({ enum: UserRole })
   role: UserRole;
-
   @ApiProperty()
   createdAt: Date;
 
@@ -46,6 +46,7 @@ export class UserResponseDto {
     dto.avatarUrl = user.avatarUrl;
     dto.dob = user.dob;
     dto.status = user.status as UserStatus;
+    dto.isActive = user.status === UserStatus.ACTIVE;
     dto.role = user.role as UserRole;
     dto.createdAt = user.createdAt;
     dto.updatedAt = user.updatedAt;

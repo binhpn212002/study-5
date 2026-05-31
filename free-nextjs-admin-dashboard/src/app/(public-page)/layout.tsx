@@ -1,3 +1,4 @@
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import React from 'react';
 import Header from './header';
 
@@ -5,7 +6,9 @@ function PublicPageLayout({ children }: { children: React.ReactNode }) {
   return (
     <div >
         <Header />
-      {children}
+        <QueryProvider> 
+          {children}
+        </QueryProvider>
     </div>
   )
 }

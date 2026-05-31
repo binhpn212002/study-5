@@ -151,6 +151,9 @@ function Page() {
         </div>
         <div className="col-span-1">
           <Advertisement />
+          <Advertisement />
+          <Advertisement />
+          <Advertisement />
         </div>
       </div>
 

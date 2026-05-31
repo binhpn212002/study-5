@@ -9,3 +9,4 @@ export enum HskLevel {
 }
 
 export const VOCABULARY_TABLE_NAME = 'vocabularies';
+export const VOCABULARY_QUEUE_IMPORT = "vocabulary-import-queue";

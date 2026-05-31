@@ -1,25 +1,53 @@
-import { Injectable } from '@nestjs/common';
-import { VocabularyRepository, VocabularyQueryOptions } from '../repositories/vocabulary.repository';
-import { Vocabulary } from '../../../database/entities/vocabulary.entity';
+import { InjectQueue } from "@nestjs/bull";
+import { Injectable } from "@nestjs/common";
+import { Queue } from "bull";
+import { parse } from "csv-parse/sync";
 import {
-  VocabularyResponseDto,
-  VocabularyListResponseDto,
-  HskLevelResponseDto,
-} from '../dto/response/vocabulary-response.dto';
-import { CreateVocabularyDto } from '../dto/create-vocabulary.dto';
-import { UpdateVocabularyDto } from '../dto/update-vocabulary.dto';
-import { ListVocabularyQueryDto } from '../dto/list-vocabulary-query.dto';
-import { HskLevel } from '../../../common/constants/vocabulary.constant';
+  HskLevel,
+  VOCABULARY_QUEUE_IMPORT,
+} from "../../../common/constants/vocabulary.constant";
+import { ListResponseDto } from "../../../common/dto/list-response.dto";
+import { PageOptionDto } from "../../../common/dto/page-option.dto";
 import {
-  VocabularyNotFoundException,
   VocabularyChineseDuplicateException,
-} from '../../../common/exceptions/vocabulary.exceptions';
-import { PageOptionDto } from '../../../common/dto/page-option.dto';
-import { ListResponseDto } from '../../../common/dto/list-response.dto';
+  VocabularyNotFoundException,
+} from "../../../common/exceptions/vocabulary.exceptions";
+import { Vocabulary } from "../../../database/entities/vocabulary.entity";
+import { CreateVocabularyDto } from "../dto/create-vocabulary.dto";
+import { ListVocabularyQueryDto } from "../dto/list-vocabulary-query.dto";
+import {
+  HskLevelResponseDto,
+  VocabularyResponseDto,
+} from "../dto/response/vocabulary-response.dto";
+import { UpdateVocabularyDto } from "../dto/update-vocabulary.dto";
+import {
+  VocabularyQueryOptions,
+  VocabularyRepository,
+} from "../repositories/vocabulary.repository";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fs = require("fs/promises") as typeof import("fs/promises");
+
+export interface CsvVocabularyRow {
+  chinese: string;
+  pinyin: string;
+  vietnameseMeaning: string;
+  exampleSentence?: string;
+  exampleMeaning?: string;
+  level: string;
+}
+
+export interface CsvValidationResult {
+  validRows: CsvVocabularyRow[];
+  skipped: number;
+}
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly vocabularyRepository: VocabularyRepository) {}
+  constructor(
+    private readonly vocabularyRepository: VocabularyRepository,
+    @InjectQueue(VOCABULARY_QUEUE_IMPORT)
+    private readonly vocabularyQueue: Queue,
+  ) {}
 
   async create(dto: CreateVocabularyDto): Promise<VocabularyResponseDto> {
     const existing = await this.vocabularyRepository.findByChinese(dto.chinese);
@@ -40,7 +68,9 @@ export class VocabularyService {
     return this.toResponseDto(saved);
   }
 
-  async findAll(query: ListVocabularyQueryDto): Promise<ListResponseDto<VocabularyResponseDto>> {
+  async findAll(
+    query: ListVocabularyQueryDto,
+  ): Promise<ListResponseDto<VocabularyResponseDto>> {
     const pageOptions = new PageOptionDto();
     pageOptions.page = query.page ?? 1;
     pageOptions.limit = query.limit ?? 20;
@@ -75,14 +105,19 @@ export class VocabularyService {
     return this.toResponseDto(entity);
   }
 
-  async update(id: string, dto: UpdateVocabularyDto): Promise<VocabularyResponseDto> {
+  async update(
+    id: string,
+    dto: UpdateVocabularyDto,
+  ): Promise<VocabularyResponseDto> {
     const entity = await this.vocabularyRepository.findById(id);
     if (!entity) {
       throw new VocabularyNotFoundException(id);
     }
 
     if (dto.chinese && dto.chinese !== entity.chinese) {
-      const existing = await this.vocabularyRepository.findByChinese(dto.chinese);
+      const existing = await this.vocabularyRepository.findByChinese(
+        dto.chinese,
+      );
       if (existing) {
         throw new VocabularyChineseDuplicateException(dto.chinese);
       }
@@ -117,7 +152,7 @@ export class VocabularyService {
 
     return Object.values(HskLevel).map((level) => ({
       level,
-      label: `HSK ${level.replace('HSK', '')}`,
+      label: `HSK ${level.replace("HSK", "")}`,
       count: countMap.get(level) ?? 0,
     }));
   }
@@ -134,5 +169,21 @@ export class VocabularyService {
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
+  }
+
+  async import(file: {
+    path: string;
+  }): Promise<{ jobId: number; total: number; skipped: number }> {
+    const csvContent = await fs.readFile(file.path, "utf8");
+    const records: Record<string, string>[] = parse(csvContent, {
+      columns: (header) => header.map((col) => col.trim().toLowerCase()),
+      skip_empty_lines: true,
+      trim: true,
+    });
+    const job = await this.vocabularyQueue.add(VOCABULARY_QUEUE_IMPORT, {
+      rows: records,
+    });
+
+    return { jobId: job.id as number, total: records.length, skipped: 0 };
   }
 }

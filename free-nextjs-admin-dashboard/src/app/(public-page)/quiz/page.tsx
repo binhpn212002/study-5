@@ -57,6 +57,7 @@ function QuizPage() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
+  const [incorrectIds, setIncorrectIds] = useState<number[]>([]);
   const [quizComplete, setQuizComplete] = useState(false);
 
   const { data: vocabulary, isLoading, isFetching } = useQuery({
@@ -72,6 +73,7 @@ function QuizPage() {
       setIsAnswered(false);
       setCorrectCount(0);
       setIncorrectCount(0);
+      setIncorrectIds([]);
       setQuizComplete(false);
     }
   }, [vocabulary?.data]);
@@ -99,6 +101,7 @@ function QuizPage() {
         setCorrectCount((prev) => prev + 1);
       } else {
         setIncorrectCount((prev) => prev + 1);
+        setIncorrectIds((prev) => [...prev, currentQuestion.vocabulary.id]);
       }
     },
     [isAnswered, currentQuestion]
@@ -124,9 +127,14 @@ function QuizPage() {
       setIsAnswered(false);
       setCorrectCount(0);
       setIncorrectCount(0);
+      setIncorrectIds([]);
       setQuizComplete(false);
     }
   }, [vocabulary?.data]);
+
+  const handleSaveToNotLearned = useCallback(() => {
+    console.log('Danh sach chua thuoc:', incorrectIds);
+  }, [incorrectIds]);
 
   const getOptionStyle = (index: number) => {
     if (!isAnswered) {
@@ -204,10 +212,18 @@ function QuizPage() {
                 </div>
                 <button
                   onClick={handleRestart}
-                  className="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors"
+                  className="w-full px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium transition-colors mb-3"
                 >
                   Làm Lại
                 </button>
+                {incorrectIds.length > 0 && (
+                  <button
+                    onClick={handleSaveToNotLearned}
+                    className="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors"
+                  >
+                    Lưu vào DS chưa thuộc ({incorrectIds.length})
+                  </button>
+                )}
               </div>
             </div>
           ) : (

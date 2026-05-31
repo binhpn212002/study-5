@@ -11,7 +11,7 @@ const menuItems = [
   },
   {
     label: 'Trắc nghiệm',
-    href: '/test',
+    href: '/quiz',
   },
   {
     label: 'Dịch câu',

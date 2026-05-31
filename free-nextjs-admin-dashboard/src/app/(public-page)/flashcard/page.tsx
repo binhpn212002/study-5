@@ -1,10 +1,13 @@
 'use client';
 
+import Pagination from '@/components/tables/Pagination';
 import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabulary.query';
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import FilterBox from '../components/FilterBox';
 import FlashCard from '../components/FlashCard';
+
+const PAGE_SIZE = 20;
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -18,15 +21,16 @@ function shuffleArray<T>(array: T[]): T[] {
 function FlashcardPage() {
   const [selectedLevel, setSelectedLevel] = useState<HskLevel | undefined>(undefined);
   const [selectedLearned, setSelectedLearned] = useState<boolean | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
   const [shuffledVocabulary, setShuffledVocabulary] = useState<VocabularyResponse[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [knownCount, setKnownCount] = useState(0);
   const [dontKnowCount, setDontKnowCount] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
 
-  const { data: vocabulary, isLoading } = useQuery({
-    queryKey: ['vocabulary-flashcard', selectedLevel || undefined, selectedLearned || undefined],
-    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: 100 }),
+  const { data: vocabulary, isLoading, isFetching } = useQuery({
+    queryKey: ['vocabulary-flashcard', selectedLevel || undefined, selectedLearned || undefined, currentPage],
+    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage }),
   });
 
   useEffect(() => {
@@ -39,8 +43,16 @@ function FlashcardPage() {
     }
   }, [vocabulary?.data]);
 
+  const handleFilterChange = useCallback((level: HskLevel | undefined, learned: boolean | undefined) => {
+    setSelectedLevel(level);
+    setSelectedLearned(learned);
+    setCurrentPage(1);
+  }, []);
+
   const currentCard = shuffledVocabulary[currentIndex];
   const totalCards = shuffledVocabulary.length;
+  const totalItems = vocabulary?.total || 0;
+  const totalPages = vocabulary?.totalPages || 1;
   const progressPercent = totalCards > 0 ? ((currentIndex) / totalCards) * 100 : 0;
 
   const handleKnow = useCallback(() => {
@@ -54,18 +66,22 @@ function FlashcardPage() {
   const handleNext = useCallback(() => {
     if (currentIndex < totalCards - 1) {
       setCurrentIndex((prev) => prev + 1);
+    } else if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
     } else {
       setSessionComplete(true);
     }
-  }, [currentIndex, totalCards]);
+  }, [currentIndex, totalCards, currentPage, totalPages]);
 
   const handlePrev = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
+    } else if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
     }
-  }, [currentIndex]);
+  }, [currentIndex, currentPage]);
 
-  const handleShuffle = useCallback(() => {
+  const handleRestart = useCallback(() => {
     if (vocabulary?.data) {
       setShuffledVocabulary(shuffleArray(vocabulary.data));
       setCurrentIndex(0);
@@ -75,24 +91,13 @@ function FlashcardPage() {
     }
   }, [vocabulary?.data]);
 
-  const handleRestart = useCallback(() => {
-    handleShuffle();
-  }, [handleShuffle]);
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        handleRestart();
-      }
-    },
-    [handleRestart]
-  );
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  const isFirstCard = currentIndex === 0 && currentPage === 1;
+  const isLastCard = currentIndex === totalCards - 1 && currentPage === totalPages;
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -154,7 +159,7 @@ function FlashcardPage() {
               <div className="mb-6">
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
                   <span>
-                    Card {currentIndex + 1} / {totalCards}
+                    Card {currentIndex + 1} / {totalCards} (Trang {currentPage}/{totalPages})
                   </span>
                   <span>
                     <span className="text-green-600 dark:text-green-400">✓ {knownCount}</span>
@@ -172,18 +177,32 @@ function FlashcardPage() {
 
               {/* FlashCard */}
               <FlashCard
-                key={currentCard.id}
-                vocabulary={currentCard}
+                key={`${currentPage}-${currentCard?.id}`}
+                vocabulary={currentCard!}
                 onKnow={handleKnow}
                 onDontKnow={handleDontKnow}
                 onNext={handleNext}
                 onPrev={handlePrev}
-                isFirst={currentIndex === 0}
-                isLast={currentIndex === totalCards - 1}
+                isFirst={isFirstCard}
+                isLast={isLastCard}
               />
 
-              {/* Navigation Controls */}
-              <div className="flex justify-center gap-4 mt-6">
+              {/* Page Info */}
+              <div className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+                {isFetching && <span className="text-blue-500">Đang tải...</span>}
+              </div>
+
+              {/* Pagination */}
+              <div className="flex justify-center mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
+              {/* Restart Button */}
+              <div className="flex justify-center mt-4">
                 <button
                   onClick={handleRestart}
                   className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -200,10 +219,19 @@ function FlashcardPage() {
           <div className="sticky top-6">
             <FilterBox
               selectedLevel={selectedLevel}
-              onLevelChange={setSelectedLevel}
+              onLevelChange={(level) => handleFilterChange(level, selectedLearned)}
               selectedLearned={selectedLearned}
-              onLearnedChange={setSelectedLearned}
+              onLearnedChange={(learned) => handleFilterChange(selectedLevel, learned)}
             />
+            
+            {/* Total items info */}
+            {totalItems > 0 && (
+              <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-medium text-gray-900 dark:text-white">{totalItems}</span> từ vựng
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

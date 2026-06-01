@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, SelectQueryBuilder } from "typeorm";
+import { USER_VOCABULARY_TABLE_NAME } from "../../../common/constants/hsk.constant";
 import {
   HskLevel,
   LearnedStatus,
@@ -29,13 +30,16 @@ export class VocabularyRepository extends BaseRepository<Vocabulary> {
     options?: VocabularyQueryOptions,
     userId?: string,
   ): Promise<{ items: Vocabulary[]; total: number }> {
-    const qb = this.createQueryBuilder("vocabulary");
+    const qb = this.createQueryBuilder("vocabulary").leftJoin(
+      USER_VOCABULARY_TABLE_NAME,
+      "uv",
+      "uv.vocabId = vocabulary.id",
+    );
 
     this.applyFilters(qb, options, userId);
 
-    const sortColumn = (pageOptions.sort as string) || "created_at";
     const sortDirection = pageOptions.sort === SortOrder.ASC ? "ASC" : "DESC";
-    qb.orderBy(`vocabulary.${sortColumn}`, sortDirection);
+    qb.orderBy("vocabulary.createdAt", sortDirection);
 
     const [items, total] = await qb
       .skip(pageOptions.skip)
@@ -102,12 +106,12 @@ export class VocabularyRepository extends BaseRepository<Vocabulary> {
     }
 
     if (options.learned === LearnedStatus.LEARNED && userId) {
-      qb.andWhere("uv.user_id = :userId", { userId });
-      qb.andWhere("uv.is_saved = :isSaved", { isSaved: true });
+      qb.andWhere("uv.userId = :userId", { userId });
+      qb.andWhere("uv.isSaved = :isSaved", { isSaved: true });
     }
     if (options.learned === LearnedStatus.NOT_LEARNED && userId) {
-      qb.andWhere("uv.user_id = :userId", { userId });
-      qb.andWhere("uv.is_saved = :isSaved", { isSaved: false });
+      qb.andWhere("uv.userId = :userId", { userId });
+      qb.andWhere("uv.isSaved = :isSaved", { isSaved: false });
     }
   }
 }

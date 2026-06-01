@@ -1,8 +1,9 @@
 'use client';
 
 import Pagination from '@/components/tables/Pagination';
+import { userVocabQuery } from '@/queries/user-vocab.query';
 import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabulary.query';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import FilterBox, { LearnedStatus } from '../components/FilterBox';
 
@@ -16,7 +17,7 @@ interface PageResult {
   page: number;
   correctCount: number;
   incorrectCount: number;
-  incorrectIds: number[];
+  incorrectIds: string[];
   totalQuestions: number;
 }
 
@@ -65,7 +66,7 @@ function QuizPage() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
-  const [incorrectIds, setIncorrectIds] = useState<number[]>([]);
+  const [incorrectIds, setIncorrectIds] = useState<string[]>([]);
   const [pageResult, setPageResult] = useState<PageResult | null>(null);
   const [allPageResults, setAllPageResults] = useState<PageResult[]>([]);
 
@@ -74,6 +75,15 @@ function QuizPage() {
     queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage, learned: learnedStatus }),
   });
 
+  const { mutate: saveVocabulary } = useMutation({
+    mutationFn: ({ vocabIds, isSaved }: { vocabIds: string[], isSaved: boolean }) => userVocabQuery.saveMany(vocabIds, isSaved),
+    onSuccess: () => {
+      console.log('Từ vựng đã được lưu');
+    },
+    onError: () => {
+      console.log('Lưu từ vựng thất bại');
+    },
+  });
   useEffect(() => {
     if (vocabulary?.data && vocabulary.data.length >= 4) {
       setQuestions(generateQuestions(vocabulary.data, 10));
@@ -107,12 +117,12 @@ function QuizPage() {
 
       setSelectedAnswer(index);
       setIsAnswered(true);
-
+console.log(currentQuestion.vocabulary.id);
       if (index === currentQuestion.correctIndex) {
         setCorrectCount((prev) => prev + 1);
       } else {
         setIncorrectCount((prev) => prev + 1);
-        setIncorrectIds((prev) => [...prev, Number(currentQuestion.vocabulary.id)]);
+        setIncorrectIds((prev) => [...prev, currentQuestion.vocabulary.id]);
       }
     },
     [isAnswered, currentQuestion]
@@ -175,7 +185,7 @@ function QuizPage() {
   }, [vocabulary?.data]);
 
   const handleSaveToNotLearned = useCallback(() => {
-    console.log('Danh sach chua thuoc:', incorrectIds);
+      saveVocabulary({ vocabIds: incorrectIds, isSaved: false });
   }, [incorrectIds]);
 
   const getOptionStyle = (index: number) => {

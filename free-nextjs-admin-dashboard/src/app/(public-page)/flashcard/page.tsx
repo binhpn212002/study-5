@@ -1,8 +1,9 @@
 'use client';
 
 import Pagination from '@/components/tables/Pagination';
+import { userVocabQuery } from '@/queries/user-vocab.query';
 import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabulary.query';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import FilterBox, { LearnedStatus } from '../components/FilterBox';
 import FlashCard from '../components/FlashCard';
@@ -27,6 +28,16 @@ function FlashcardPage() {
   const [knownCount, setKnownCount] = useState(0);
   const [dontKnowCount, setDontKnowCount] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
+
+  const { mutate: saveVocabulary } = useMutation({
+    mutationFn: ({ id, isSaved }: { id: string, isSaved: boolean }) => userVocabQuery.create(id, isSaved),
+    onSuccess: () => {
+      console.log('Từ vựng đã được lưu');
+    },
+    onError: () => {
+      console.log('Lưu từ vựng thất bại');
+    },
+  });
 
   const { data: vocabulary, isLoading, isFetching } = useQuery({
     queryKey: ['vocabulary-flashcard', selectedLevel || undefined, learnedStatus || undefined, currentPage || undefined, learnedStatus],
@@ -55,13 +66,13 @@ function FlashcardPage() {
   const totalPages = vocabulary?.totalPages || 1;
   const progressPercent = totalCards > 0 ? ((currentIndex) / totalCards) * 100 : 0;
 
-  const handleKnow = useCallback(() => {
-    setKnownCount((prev) => prev + 1);
-  }, []);
+  const handleKnow = (id: string) => {
+    saveVocabulary({ id, isSaved: true });
+  };
 
-  const handleDontKnow = useCallback(() => {
-    setDontKnowCount((prev) => prev + 1);
-  }, []);
+  const handleDontKnow = (id: string) => {
+    saveVocabulary({ id, isSaved: false });
+  };
 
   const handleNext = useCallback(() => {
     if (currentIndex < totalCards - 1) {
@@ -179,8 +190,8 @@ function FlashcardPage() {
               <FlashCard
                 key={`${currentPage}-${currentCard?.id}`}
                 vocabulary={currentCard!}
-                onKnow={handleKnow}
-                onDontKnow={handleDontKnow}
+                onKnow={() => handleKnow(currentCard?.id)}
+                onDontKnow={() => handleDontKnow(currentCard?.id)}
                 onNext={handleNext}
                 onPrev={handlePrev}
                 isFirst={isFirstCard}

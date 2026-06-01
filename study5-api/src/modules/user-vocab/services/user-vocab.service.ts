@@ -11,6 +11,7 @@ import { VocabularyService } from "../../vocabulary/services/vocabulary.service"
 import { ListUserVocabQueryDto } from "../dto/list-user-vocab-query.dto";
 import { UserVocabResponseDto } from "../dto/response/user-vocab-response.dto";
 import { SaveVocabularyDto } from "../dto/save-vocabulary.dto";
+import { SaveManyVocabularyDto } from "../dto/save-many-vocabulary.dto";
 import { UpdateVocabStatusDto } from "../dto/update-vocab-status.dto";
 import {
   UserVocabQueryOptions,
@@ -33,11 +34,24 @@ export class UserVocabService {
     const userVocab = await this.userVocabRepository.upsert(
       userId,
       dto.vocabId,
-      true,
+      dto.isSaved,
       VocabStatus.NEW,
     );
 
     return this.toResponseDtoFromEntity(userVocab, vocabularyDto);
+  }
+
+  async saveMany(
+    userId: string,
+    dto: SaveManyVocabularyDto,
+  ): Promise<{ savedCount: number }> {
+    const results = await Promise.all(
+      dto.vocabIds.map((vocabId) =>
+        this.userVocabRepository.upsert(userId, vocabId, dto.isSaved, VocabStatus.NEW),
+      ),
+    );
+
+    return { savedCount: results.length };
   }
 
   async remove(userId: string, vocabId: string): Promise<void> {

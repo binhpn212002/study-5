@@ -4,7 +4,7 @@ import Pagination from '@/components/tables/Pagination';
 import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabulary.query';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import FilterBox from '../components/FilterBox';
+import FilterBox, { LearnedStatus } from '../components/FilterBox';
 import FlashCard from '../components/FlashCard';
 
 const PAGE_SIZE = 20;
@@ -20,7 +20,7 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function FlashcardPage() {
   const [selectedLevel, setSelectedLevel] = useState<HskLevel | undefined>(undefined);
-  const [selectedLearned, setSelectedLearned] = useState<boolean | undefined>(undefined);
+  const [learnedStatus, setLearnedStatus] = useState<LearnedStatus>(LearnedStatus.ALL);
   const [currentPage, setCurrentPage] = useState(1);
   const [shuffledVocabulary, setShuffledVocabulary] = useState<VocabularyResponse[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,8 +29,8 @@ function FlashcardPage() {
   const [sessionComplete, setSessionComplete] = useState(false);
 
   const { data: vocabulary, isLoading, isFetching } = useQuery({
-    queryKey: ['vocabulary-flashcard', selectedLevel || undefined, selectedLearned || undefined, currentPage],
-    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage }),
+    queryKey: ['vocabulary-flashcard', selectedLevel || undefined, learnedStatus || undefined, currentPage || undefined, learnedStatus],
+    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage, learned: learnedStatus }),
   });
 
   useEffect(() => {
@@ -43,9 +43,9 @@ function FlashcardPage() {
     }
   }, [vocabulary?.data]);
 
-  const handleFilterChange = useCallback((level: HskLevel | undefined, learned: boolean | undefined) => {
+  const handleFilterChange = useCallback((level: HskLevel | undefined, learned: LearnedStatus) => {
     setSelectedLevel(level);
-    setSelectedLearned(learned);
+    setLearnedStatus(learned);
     setCurrentPage(1);
   }, []);
 
@@ -219,9 +219,9 @@ function FlashcardPage() {
           <div className="sticky top-6">
             <FilterBox
               selectedLevel={selectedLevel}
-              onLevelChange={(level) => handleFilterChange(level, selectedLearned)}
-              selectedLearned={selectedLearned}
-              onLearnedChange={(learned) => handleFilterChange(selectedLevel, learned)}
+              onLevelChange={(level) => handleFilterChange(level, learnedStatus)}
+              learnedStatus={learnedStatus}
+              onLearnedChange={(learned) => handleFilterChange(selectedLevel, learned as LearnedStatus)}
             />
             
             {/* Total items info */}

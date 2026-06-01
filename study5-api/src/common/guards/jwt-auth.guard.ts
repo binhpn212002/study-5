@@ -23,6 +23,8 @@ export class JwtAuthGuard {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+
+    console.log("JwtAuthGuard canActivate");
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -35,6 +37,24 @@ export class JwtAuthGuard {
       context.getClass(),
     ]); 
     if (!role) {
+       
+      const request = context.switchToHttp().getRequest<{
+        headers?: { authorization?: string };
+        user?: AuthUser;
+      }>();
+      const token = extractBearerTokenFromAuthorizationHeader(
+        request.headers?.authorization,
+      );
+      if (!token) {
+        return true;
+      }
+      const decoded = await this.firebaseAdmin.verifyIdToken(token);
+      const user = await this.usersService.resolveUserForFirebaseLogin(
+        decoded.uid,
+        decoded,
+      );
+      const authUser = this.usersService.getAuthUser(user.id);
+      request.user = await authUser;
       return true;
     }
 

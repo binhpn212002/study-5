@@ -1,7 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository, SelectQueryBuilder } from "typeorm";
-import { HskLevel } from "../../../common/constants/vocabulary.constant";
+import {
+  HskLevel,
+  LearnedStatus,
+} from "../../../common/constants/vocabulary.constant";
 import { PageOptionDto, SortOrder } from "../../../common/dto/page-option.dto";
 import { BaseRepository } from "../../../common/repositories/base.repository";
 import { Vocabulary } from "../../../database/entities/vocabulary.entity";
@@ -9,8 +12,7 @@ import { Vocabulary } from "../../../database/entities/vocabulary.entity";
 export interface VocabularyQueryOptions {
   q?: string;
   level?: HskLevel;
-  fromDate?: string;
-  toDate?: string;
+  learned?: LearnedStatus;
 }
 
 @Injectable()
@@ -25,10 +27,11 @@ export class VocabularyRepository extends BaseRepository<Vocabulary> {
   async findAllWithPagination(
     pageOptions: PageOptionDto,
     options?: VocabularyQueryOptions,
+    userId?: string,
   ): Promise<{ items: Vocabulary[]; total: number }> {
     const qb = this.createQueryBuilder("vocabulary");
 
-    this.applyFilters(qb, options);
+    this.applyFilters(qb, options, userId);
 
     const sortColumn = (pageOptions.sort as string) || "created_at";
     const sortDirection = pageOptions.sort === SortOrder.ASC ? "ASC" : "DESC";
@@ -80,6 +83,7 @@ export class VocabularyRepository extends BaseRepository<Vocabulary> {
   private applyFilters(
     qb: SelectQueryBuilder<Vocabulary>,
     options?: VocabularyQueryOptions,
+    userId?: string,
   ): void {
     if (!options) return;
 
@@ -97,16 +101,13 @@ export class VocabularyRepository extends BaseRepository<Vocabulary> {
       qb.andWhere("vocabulary.level = :level", { level: options.level });
     }
 
-    if (options.fromDate) {
-      qb.andWhere("vocabulary.created_at >= :fromDate", {
-        fromDate: options.fromDate,
-      });
+    if (options.learned === LearnedStatus.LEARNED && userId) {
+      qb.andWhere("uv.user_id = :userId", { userId });
+      qb.andWhere("uv.is_saved = :isSaved", { isSaved: true });
     }
-
-    if (options.toDate) {
-      qb.andWhere("vocabulary.created_at <= :toDate", {
-        toDate: options.toDate,
-      });
+    if (options.learned === LearnedStatus.NOT_LEARNED && userId) {
+      qb.andWhere("uv.user_id = :userId", { userId });
+      qb.andWhere("uv.is_saved = :isSaved", { isSaved: false });
     }
   }
 }

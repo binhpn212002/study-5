@@ -4,7 +4,7 @@ import Pagination from '@/components/tables/Pagination';
 import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabulary.query';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
-import FilterBox from '../components/FilterBox';
+import FilterBox, { LearnedStatus } from '../components/FilterBox';
 
 interface QuizQuestion {
   vocabulary: VocabularyResponse;
@@ -57,7 +57,7 @@ function generateQuestions(
 
 function QuizPage() {
   const [selectedLevel, setSelectedLevel] = useState<HskLevel | undefined>(undefined);
-  const [selectedLearned, setSelectedLearned] = useState<boolean | undefined>(undefined);
+  const [learnedStatus, setLearnedStatus] = useState<LearnedStatus>(LearnedStatus.ALL);
   const [currentPage, setCurrentPage] = useState(1);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -70,8 +70,8 @@ function QuizPage() {
   const [allPageResults, setAllPageResults] = useState<PageResult[]>([]);
 
   const { data: vocabulary, isLoading, isFetching } = useQuery({
-    queryKey: ['vocabulary-quiz', selectedLevel || undefined, selectedLearned || undefined, currentPage],
-    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage }),
+    queryKey: ['vocabulary-quiz', selectedLevel || undefined, learnedStatus || undefined, currentPage],
+    queryFn: () => vocabularyQuery.list({ level: selectedLevel || undefined, limit: PAGE_SIZE, page: currentPage, learned: learnedStatus }),
   });
 
   useEffect(() => {
@@ -87,9 +87,9 @@ function QuizPage() {
     }
   }, [vocabulary?.data, currentPage]);
 
-  const handleFilterChange = useCallback((level: HskLevel | undefined, learned: boolean | undefined) => {
+  const handleFilterChange = useCallback((level: HskLevel | undefined, learned: LearnedStatus) => {
     setSelectedLevel(level);
-    setSelectedLearned(learned);
+    setLearnedStatus(learned as LearnedStatus);
     setCurrentPage(1);
     setPageResult(null);
     setAllPageResults([]);
@@ -502,9 +502,9 @@ function QuizPage() {
           <div className="sticky top-6">
             <FilterBox
               selectedLevel={selectedLevel}
-              onLevelChange={(level) => handleFilterChange(level, selectedLearned)}
-              selectedLearned={selectedLearned}
-              onLearnedChange={(learned) => handleFilterChange(selectedLevel, learned)}
+              onLevelChange={(level) => handleFilterChange(level, LearnedStatus.ALL)}
+              learnedStatus={learnedStatus}
+              onLearnedChange={(status) => handleFilterChange(selectedLevel, status)}
             />
             
             {/* Total items info */}

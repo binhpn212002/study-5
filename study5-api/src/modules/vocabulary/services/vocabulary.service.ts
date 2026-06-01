@@ -70,6 +70,7 @@ export class VocabularyService {
 
   async findAll(
     query: ListVocabularyQueryDto,
+    userId?: string,
   ): Promise<ListResponseDto<VocabularyResponseDto>> {
     const pageOptions = new PageOptionDto();
     pageOptions.page = query.page ?? 1;
@@ -80,13 +81,13 @@ export class VocabularyService {
     const queryOptions: VocabularyQueryOptions = {
       q: query.q,
       level: query.level,
-      fromDate: query.fromDate,
-      toDate: query.toDate,
+      learned: query.learned,
     };
 
     const result = await this.vocabularyRepository.findAllWithPagination(
       pageOptions,
       queryOptions,
+      userId,
     );
 
     return ListResponseDto.create(

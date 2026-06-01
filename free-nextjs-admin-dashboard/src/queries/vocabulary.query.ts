@@ -1,3 +1,4 @@
+import { LearnedStatus } from '../app/(public-page)/components/FilterBox';
 import { api } from '../lib/axios';
 
 /** HSK Level enum matching backend */
@@ -40,9 +41,8 @@ export interface ListVocabularyParams {
   page?: number;
   limit?: number;
   q?: string;
-  level?: HskLevel;
-  fromDate?: string;
-  toDate?: string;
+  level?: HskLevel;   
+  learned?: LearnedStatus;
 }
 
 const buildParams = (params: Record<string, unknown> = {}): Record<string, string | number | undefined> => {
@@ -62,8 +62,7 @@ export const vocabularyQuery = {
       limit: params.limit,
       q: params.q,
       level: params.level,
-      fromDate: params.fromDate,
-      toDate: params.toDate,
+      learned: params.learned,
     });
     return api.get<PaginatedVocabularyResponse>('/vocabularies', { params: query }).then((res) => res.data);
   },

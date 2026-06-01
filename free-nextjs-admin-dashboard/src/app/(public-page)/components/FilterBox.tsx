@@ -13,23 +13,29 @@ const HSK_LEVELS = [
   { value: HskLevel.HSK6, label: 'HSK 6' },
 ];
 
+export enum LearnedStatus {
+  ALL = 'ALL',
+  LEARNED = 'LEARNED',
+  NOT_LEARNED = 'NOT_LEARNED',
+}
+
 const LEARNED_OPTIONS = [
-  { value: undefined, label: 'All' },
-  { value: true, label: 'Đã thuộc' },
-  { value: false, label: 'Chưa thuộc' },
+  { value: LearnedStatus.ALL, label: 'All' },
+  { value: LearnedStatus.LEARNED, label: 'Đã thuộc' },
+  { value: LearnedStatus.NOT_LEARNED, label: 'Chưa thuộc' },
 ];
 
 interface FilterBoxProps {
   selectedLevel: HskLevel | undefined;
   onLevelChange: (level: HskLevel | undefined) => void;
-  selectedLearned: boolean | undefined;
-  onLearnedChange: (learned: boolean | undefined) => void;
+  learnedStatus: LearnedStatus;
+  onLearnedChange: (learned: LearnedStatus) => void;
 }
 
 function FilterBox({
   selectedLevel,
   onLevelChange,
-  selectedLearned,
+  learnedStatus,
   onLearnedChange,
 }: FilterBoxProps) {
   const handleLevelChange = useCallback(
@@ -40,7 +46,7 @@ function FilterBox({
   );
 
   const handleLearnedChange = useCallback(
-    (learned: boolean | undefined) => {
+    (learned: LearnedStatus) => {
       onLearnedChange(learned);
     },
     [onLearnedChange]
@@ -79,9 +85,9 @@ function FilterBox({
           {LEARNED_OPTIONS.map((option) => (
             <button
               key={option.label}
-              onClick={() => handleLearnedChange(option.value)}
+              onClick={() => handleLearnedChange(option.value as LearnedStatus)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                selectedLearned === option.value
+                learnedStatus === option.value
                   ? 'bg-green-500 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
               }`}

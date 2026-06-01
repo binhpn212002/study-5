@@ -25,8 +25,10 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { UserRole } from "../../common/constants/user.constant";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from "../../common/decorators/roles.decorator";
+import { AuthUser } from "../../common/interfaces/auth-user.interface";
 import { CreateVocabularyDto } from "./dto/create-vocabulary.dto";
 import { DetailVocabularyParamDto } from './dto/detail-vocabulary-param.dto';
 import { ListVocabularyQueryDto } from "./dto/list-vocabulary-query.dto";
@@ -60,11 +62,24 @@ export class VocabularyController {
   })
   @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
-  @ApiQuery({ name: "q", required: false, type: String, description: "Search by Chinese character or pinyin" })
+  @ApiQuery({
+    name: "q",
+    required: false,
+    type: String,
+    description: "Search by Chinese character or pinyin",
+  })
   @ApiQuery({ name: "level", required: false, type: Number, example: 1 })
-  @ApiQuery({ name: "category", required: false, type: String, example: "food" })
-  findAll(@Query() query: ListVocabularyQueryDto) {
-    return this.vocabularyService.findAll(query);
+  @ApiQuery({
+    name: "category",
+    required: false,
+    type: String,
+    example: "food",
+  })
+  findAll(
+    @Query() query: ListVocabularyQueryDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.vocabularyService.findAll(query, user?.userId);
   }
 
   @Get("levels")
@@ -84,7 +99,12 @@ export class VocabularyController {
     status: 200,
     description: "List of vocabularies for the specified HSK level",
   })
-  @ApiParam({ name: "level", type: Number, example: 1, description: "HSK level (1-6)" })
+  @ApiParam({
+    name: "level",
+    type: Number,
+    example: 1,
+    description: "HSK level (1-6)",
+  })
   @ApiQuery({ name: "page", required: false, type: Number, example: 1 })
   @ApiQuery({ name: "limit", required: false, type: Number, example: 20 })
   findByLevel(@Param() param: VocabularyByLevelParamDto) {
@@ -98,7 +118,12 @@ export class VocabularyController {
     description: "Vocabulary details",
   })
   @ApiResponse({ status: 404, description: "Vocabulary not found" })
-  @ApiParam({ name: "id", type: Number, example: 1, description: "Vocabulary ID" })
+  @ApiParam({
+    name: "id",
+    type: Number,
+    example: 1,
+    description: "Vocabulary ID",
+  })
   findOne(@Param() param: DetailVocabularyParamDto) {
     return this.vocabularyService.findById(param.id);
   }
@@ -111,7 +136,12 @@ export class VocabularyController {
     description: "Vocabulary updated successfully",
   })
   @ApiResponse({ status: 404, description: "Vocabulary not found" })
-  @ApiParam({ name: "id", type: Number, example: 1, description: "Vocabulary ID" })
+  @ApiParam({
+    name: "id",
+    type: Number,
+    example: 1,
+    description: "Vocabulary ID",
+  })
   update(
     @Param() param: DetailVocabularyParamDto,
     @Body() dto: UpdateVocabularyDto,
@@ -127,7 +157,12 @@ export class VocabularyController {
     description: "Vocabulary updated successfully",
   })
   @ApiResponse({ status: 404, description: "Vocabulary not found" })
-  @ApiParam({ name: "id", type: Number, example: 1, description: "Vocabulary ID" })
+  @ApiParam({
+    name: "id",
+    type: Number,
+    example: 1,
+    description: "Vocabulary ID",
+  })
   partialUpdate(
     @Param() param: DetailVocabularyParamDto,
     @Body() dto: UpdateVocabularyDto,
@@ -144,7 +179,12 @@ export class VocabularyController {
     description: "Vocabulary deleted successfully",
   })
   @ApiResponse({ status: 404, description: "Vocabulary not found" })
-  @ApiParam({ name: "id", type: Number, example: 1, description: "Vocabulary ID" })
+  @ApiParam({
+    name: "id",
+    type: Number,
+    example: 1,
+    description: "Vocabulary ID",
+  })
   remove(@Param() param: DetailVocabularyParamDto) {
     return this.vocabularyService.remove(param.id);
   }

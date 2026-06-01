@@ -10,3 +10,9 @@ export enum HskLevel {
 
 export const VOCABULARY_TABLE_NAME = 'vocabularies';
 export const VOCABULARY_QUEUE_IMPORT = "vocabulary-import-queue";
+
+export enum LearnedStatus {
+  ALL = "ALL",
+  LEARNED = "LEARNED",
+  NOT_LEARNED = "NOT_LEARNED",
+}

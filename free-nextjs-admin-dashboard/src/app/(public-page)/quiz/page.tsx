@@ -18,6 +18,7 @@ interface PageResult {
   correctCount: number;
   incorrectCount: number;
   incorrectIds: string[];
+  correctIds: string[];
   totalQuestions: number;
 }
 
@@ -67,6 +68,7 @@ function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [incorrectIds, setIncorrectIds] = useState<string[]>([]);
+  const [correctIds, setCorrectIds] = useState<string[]>([]);
   const [pageResult, setPageResult] = useState<PageResult | null>(null);
   const [allPageResults, setAllPageResults] = useState<PageResult[]>([]);
 
@@ -93,6 +95,7 @@ function QuizPage() {
       setCorrectCount(0);
       setIncorrectCount(0);
       setIncorrectIds([]);
+      setCorrectIds([]);
       setPageResult(null);
     }
   }, [vocabulary?.data, currentPage]);
@@ -117,9 +120,10 @@ function QuizPage() {
 
       setSelectedAnswer(index);
       setIsAnswered(true);
-console.log(currentQuestion.vocabulary.id);
+
       if (index === currentQuestion.correctIndex) {
         setCorrectCount((prev) => prev + 1);
+        setCorrectIds((prev) => [...prev, currentQuestion.vocabulary.id]);
       } else {
         setIncorrectCount((prev) => prev + 1);
         setIncorrectIds((prev) => [...prev, currentQuestion.vocabulary.id]);
@@ -140,11 +144,12 @@ console.log(currentQuestion.vocabulary.id);
         correctCount,
         incorrectCount,
         incorrectIds,
+        correctIds,
         totalQuestions,
       };
       setPageResult(result);
     }
-  }, [currentIndex, totalQuestions, currentPage, correctCount, incorrectCount, incorrectIds]);
+  }, [currentIndex, totalQuestions, currentPage, correctCount, incorrectCount, incorrectIds, correctIds]);
 
   const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) {
@@ -153,10 +158,12 @@ console.log(currentQuestion.vocabulary.id);
         correctCount,
         incorrectCount,
         incorrectIds,
+        correctIds,
         totalQuestions,
       };
       setAllPageResults((prev) => [...prev, result]);
       setCurrentPage((prev) => prev + 1);
+      setCorrectIds([]);
     } else {
       // Trang cuoi cung - luu ket qua va hien thi tong hop
       const result: PageResult = {
@@ -164,12 +171,13 @@ console.log(currentQuestion.vocabulary.id);
         correctCount,
         incorrectCount,
         incorrectIds,
+        correctIds,
         totalQuestions,
       };
       setAllPageResults((prev) => [...prev, result]);
       setPageResult(null);
     }
-  }, [currentPage, totalPages, correctCount, incorrectCount, incorrectIds, totalQuestions]);
+  }, [currentPage, totalPages, correctCount, incorrectCount, incorrectIds, correctIds, totalQuestions]);
 
   const handleRestart = useCallback(() => {
     if (vocabulary?.data && vocabulary.data.length >= 4) {
@@ -180,13 +188,22 @@ console.log(currentQuestion.vocabulary.id);
       setCorrectCount(0);
       setIncorrectCount(0);
       setIncorrectIds([]);
+      setCorrectIds([]);
       setPageResult(null);
     }
   }, [vocabulary?.data]);
 
   const handleSaveToNotLearned = useCallback(() => {
-      saveVocabulary({ vocabIds: incorrectIds, isSaved: false });
-  }, [incorrectIds]);
+    if (pageResult && pageResult.incorrectIds.length > 0) {
+      saveVocabulary({ vocabIds: pageResult.incorrectIds, isSaved: false });
+    }
+  }, [pageResult]);
+
+  const handleSaveToLearned = useCallback(() => {
+    if (pageResult && pageResult.correctIds.length > 0) {
+      saveVocabulary({ vocabIds: pageResult.correctIds, isSaved: true });
+    }
+  }, [pageResult]);
 
   const getOptionStyle = (index: number) => {
     if (!isAnswered) {
@@ -208,6 +225,14 @@ console.log(currentQuestion.vocabulary.id);
   const totalCorrectCount = allPageResults.reduce((sum, r) => sum + r.correctCount, 0) + (pageResult ? pageResult.correctCount : 0);
   const totalIncorrectCount = allPageResults.reduce((sum, r) => sum + r.incorrectCount, 0) + (pageResult ? pageResult.incorrectCount : 0);
   const totalAllQuestions = allPageResults.reduce((sum, r) => sum + r.totalQuestions, 0) + (pageResult ? pageResult.totalQuestions : 0);
+  const allCorrectIds = [
+    ...allPageResults.flatMap((r) => r.correctIds),
+    ...(pageResult?.correctIds || []),
+  ];
+  const allIncorrectIds = [
+    ...allPageResults.flatMap((r) => r.incorrectIds),
+    ...(pageResult?.incorrectIds || []),
+  ];
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -293,14 +318,24 @@ console.log(currentQuestion.vocabulary.id);
                   Làm Lại Trang Này
                 </button>
 
-                {pageResult.incorrectIds.length > 0 && (
-                  <button
-                    onClick={handleSaveToNotLearned}
-                    className="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors"
-                  >
-                    Lưu vào DS chưa thuộc ({pageResult.incorrectIds.length})
-                  </button>
-                )}
+                <div className="flex gap-3">
+                  {pageResult.correctIds.length > 0 && (
+                    <button
+                      onClick={handleSaveToLearned}
+                      className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors"
+                    >
+                      Đã thuộc ({pageResult.correctIds.length})
+                    </button>
+                  )}
+                  {pageResult.incorrectIds.length > 0 && (
+                    <button
+                      onClick={handleSaveToNotLearned}
+                      className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors"
+                    >
+                      Chưa thuộc ({pageResult.incorrectIds.length})
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ) : allPageResults.length > 0 && totalAllQuestions > 0 ? (
@@ -356,19 +391,26 @@ console.log(currentQuestion.vocabulary.id);
                   </div>
                 </div>
 
-                {/* Nut luu danh sach tu chua thuoc */}
-                {totalIncorrectCount > 0 && (
-                  <button
-                    onClick={() => {
-                      const allIncorrectIds = [
-                        ...allPageResults.flatMap((r) => r.incorrectIds),
-                      ];
-                      console.log('Tat ca tu chua thuoc:', allIncorrectIds);
-                    }}
-                    className="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors mb-3"
-                  >
-                    Lưu vào DS chưa thuộc ({totalIncorrectCount})
-                  </button>
+                {/* Nut luu danh sach tu da thuoc va chua thuoc */}
+                {(totalCorrectCount > 0 || totalIncorrectCount > 0) && (
+                  <div className="flex gap-3 mb-3">
+                    {totalCorrectCount > 0 && (
+                      <button
+                        onClick={() => saveVocabulary({ vocabIds: allCorrectIds, isSaved: true })}
+                        className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors"
+                      >
+                        Đã thuộc ({totalCorrectCount})
+                      </button>
+                    )}
+                    {totalIncorrectCount > 0 && (
+                      <button
+                        onClick={() => saveVocabulary({ vocabIds: allIncorrectIds, isSaved: false })}
+                        className="flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium transition-colors"
+                      >
+                        Chưa thuộc ({totalIncorrectCount})
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 <button

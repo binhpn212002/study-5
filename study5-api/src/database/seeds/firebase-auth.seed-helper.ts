@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
-import { loadFirebaseServiceAccountJson } from '../../config/firebase-service-account.util';
-import { toE164VN } from '../../common/utils/phone-normalize.util';
+import { toE164VN } from "../../common/utils/phone-normalize.util";
+import { loadFirebaseServiceAccountJson } from "../../config/firebase-service-account.util";
 
 /** Tránh trùng init khi seed chạy trong cùng process với app Nest (đã có Firebase app). */
 export function tryInitFirebaseAdminForSeed(): boolean {
@@ -30,7 +30,8 @@ export function tryInitFirebaseAdminForSeed(): boolean {
  */
 export async function createOrGetFirebaseUidByPhone(
   phoneLocal: string,
-  displayName: string,
+  firstName: string,
+  lastName: string,
   email: string,
 ): Promise<string | null> {
   if (!tryInitFirebaseAdminForSeed()) {
@@ -40,24 +41,22 @@ export async function createOrGetFirebaseUidByPhone(
   try {
     const user = await admin.auth().createUser({
       email: email,
-      displayName: displayName,
+      displayName: firstName + " " + lastName,
       password: "123456",
     });
-    console.log(
-      `[seed] Firebase Auth: created ${phoneE164} → uid=${user.uid}`,
-    );
+    console.log(`[seed] Firebase Auth: created ${phoneE164} → uid=${user.uid}`);
     return user.uid;
   } catch (e: unknown) {
     const code =
-      e && typeof e === 'object' && 'code' in e
+      e && typeof e === "object" && "code" in e
         ? String((e as { code?: string }).code)
-        : '';
+        : "";
     const errorInfo =
-      e && typeof e === 'object' && 'errorInfo' in e
+      e && typeof e === "object" && "errorInfo" in e
         ? (e as { errorInfo?: { code?: string } }).errorInfo
         : undefined;
     const errCode = errorInfo?.code ?? code;
-    if (errCode === 'auth/phone-number-already-exists') {
+    if (errCode === "auth/phone-number-already-exists") {
       const existing = await admin.auth().getUserByPhoneNumber(phoneE164);
       console.log(
         `[seed] Firebase Auth: phone exists → uid=${existing.uid} (${phoneE164})`,

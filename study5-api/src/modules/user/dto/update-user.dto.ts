@@ -6,15 +6,13 @@ import {
   IsString,
   MaxLength,
   ValidateIf,
-} from 'class-validator';
+} from "class-validator";
 import { UserStatus } from '../../../common/constants/user.constant';
 
 export class UpdateUserDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
   @IsString()
   @MaxLength(255)
   email?: string | null;
@@ -23,7 +21,13 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  fullName?: string | null;
+  firstName: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  lastName: string;
 
   @ApiPropertyOptional({ enum: UserStatus })
   @IsOptional()
@@ -32,13 +36,13 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional({
     description:
-      'UID Firebase — gán/sửa thủ công (admin). Null để xóa liên kết (hiếm khi dùng)',
+      "UID Firebase — gán/sửa thủ công (admin). Null để xóa liên kết (hiếm khi dùng)",
   })
   @IsOptional()
   @Transform(({ value }) => {
     if (value === null || value === undefined) return value;
-    if (typeof value === 'string' && value.trim() === '') return null;
-    return typeof value === 'string' ? value.trim() : value;
+    if (typeof value === "string" && value.trim() === "") return null;
+    return typeof value === "string" ? value.trim() : value;
   })
   @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsString()

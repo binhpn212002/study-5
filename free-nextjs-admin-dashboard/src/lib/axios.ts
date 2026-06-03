@@ -27,10 +27,33 @@ api.interceptors.request.use(
 //error interceptor
 
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      await api.post(
+        "/auth/refresh-token",
+        {
+          refreshToken: localStorage.getItem("refresh_token"),
+        }
+      ).then((res) => {
+        if (res.status === 200) {
+          localStorage.setItem("access_token", res.data.accessToken);
+          localStorage.setItem("refresh_token", res.data.refreshToken);
+        }
+      }).catch((err) => {
+        return Promise.reject(err);
+      });
+
+      return api(originalRequest);
+    }
+
     return Promise.reject(error);
   }
 );

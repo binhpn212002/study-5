@@ -16,31 +16,27 @@ export class UsersRepository extends BaseRepository<User> {
     super(repository);
   }
 
-  findByUsername(username: string): Promise<User | null> {
+  findByEmail(email: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { username },
-       
+      where: { email },
     });
   }
 
   findByPhone(phone: string): Promise<User | null> {
     return this.repository.findOne({
       where: { phone },
-       
     });
   }
 
-  findByUsernameOrPhone(identifier: string): Promise<User | null> {
+  findByEmailOrPhone(identifier: string): Promise<User | null> {
     return this.repository.findOne({
-      where: [{ username: identifier }, { phone: identifier }],
-       
+      where: [{ email: identifier }, { phone: identifier }],
     });
   }
 
   findByFirebaseId(firebaseId: string): Promise<User | null> {
     return this.repository.findOne({
       where: { firebaseId },
-       
     });
   }
 
@@ -48,31 +44,31 @@ export class UsersRepository extends BaseRepository<User> {
   findAllWithFirebaseIdNullWithRoles(): Promise<User[]> {
     return this.repository.find({
       where: { firebaseId: IsNull() },
-       
     });
   }
 
   findByIdWithRoles(id: string): Promise<User | null> {
     return this.repository.findOne({
       where: { id },
-       
     });
   }
 
   async existsUsername(username: string, excludeId?: string): Promise<boolean> {
-    const qb = this.createQueryBuilder('u').where('u.username = :username', {
+    const qb = this.createQueryBuilder("u").where("u.username = :username", {
       username,
     });
     if (excludeId) {
-      qb.andWhere('u.id != :excludeId', { excludeId });
+      qb.andWhere("u.id != :excludeId", { excludeId });
     }
     return qb.getExists();
   }
 
   async existsPhone(phone: string, excludeId?: string): Promise<boolean> {
-    const qb = this.createQueryBuilder('u').where('u.phone = :phone', { phone });
+    const qb = this.createQueryBuilder("u").where("u.phone = :phone", {
+      phone,
+    });
     if (excludeId) {
-      qb.andWhere('u.id != :excludeId', { excludeId });
+      qb.andWhere("u.id != :excludeId", { excludeId });
     }
     return qb.getExists();
   }
@@ -81,11 +77,14 @@ export class UsersRepository extends BaseRepository<User> {
     firebaseId: string,
     excludeId?: string,
   ): Promise<boolean> {
-    const qb = this.createQueryBuilder('u').where('u.firebaseId = :firebaseId', {
-      firebaseId,
-    });
+    const qb = this.createQueryBuilder("u").where(
+      "u.firebaseId = :firebaseId",
+      {
+        firebaseId,
+      },
+    );
     if (excludeId) {
-      qb.andWhere('u.id != :excludeId', { excludeId });
+      qb.andWhere("u.id != :excludeId", { excludeId });
     }
     return qb.getExists();
   }

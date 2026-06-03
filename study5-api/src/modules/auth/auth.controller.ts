@@ -11,30 +11,39 @@ import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from "./dto/refresh-token.dto";
 import { AuthService } from './services/auth.service';
 
-@ApiTags('auth')
-@Controller('auth')
+@ApiTags("auth")
+@Controller("auth")
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Post('login')
+  @Post("login")
   @ApiOperation({
     summary:
-      'Đăng nhập username + password — BE gọi Firebase Identity Toolkit (Email/Password), sau đó cấp JWT giống /auth/firebase',
+      "Đăng nhập username + password — BE gọi Firebase Identity Toolkit (Email/Password), sau đó cấp JWT giống /auth/firebase",
   })
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
-  @Post('register')
+  @Post("register")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Tạo user (cần quyền user.create)' })
+  @ApiOperation({ summary: "Tạo user (cần quyền user.create)" })
   @HttpCode(HttpStatus.CREATED)
   register(@Body() dto: CreateUserDto) {
     return this.authService.register(dto);
+  }
+
+  @Post("refresh-token")
+  @Public()
+  @ApiOperation({ summary: "Refresh token" })
+  @HttpCode(HttpStatus.OK)
+  refreshToken(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto);
   }
 }

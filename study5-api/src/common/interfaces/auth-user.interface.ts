@@ -3,6 +3,6 @@
  */
 export interface AuthUser {
   userId: string;
-  username: string;
-  role: string,
+  role: string;
+  email: string;
 }

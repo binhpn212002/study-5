@@ -28,9 +28,6 @@ export class UsersService {
     private readonly firebaseService: FirebaseAdminService,
   ) {}
 
-  
-
-
   async getAuthUser(userId: string): Promise<AuthUser | null> {
     const user = await this.usersRepo.findByIdWithRoles(userId);
     if (!user) {
@@ -41,9 +38,9 @@ export class UsersService {
     }
     return {
       userId: user.id,
-        username: user.username,
-        role: user.role ?? '',
-      };
+      role: user.role ?? "",
+      email: user.email ?? "",
+    };
   }
 
   /**
@@ -51,23 +48,17 @@ export class UsersService {
    * - `username` dạng email → dùng trực tiếp;
    * - ngược lại → lấy `users.email` (bắt buộc có) của user theo username.
    */
-  async resolveEmailForPasswordLogin(username: string): Promise<string> {
-    const u = username.trim();
-    if (u.includes('@')) {
-      return u.toLowerCase();
-    }
-    const user = await this.usersRepo.findByUsername(u);
+  async resolveEmailForPasswordLogin(email: string): Promise<string> {
+    const user = await this.usersRepo.findByEmail(email);
+
+    console.log(user);
     if (!user) {
       throw new AuthInvalidCredentialsException();
     }
     if (user.status === UserStatus.INACTIVE) {
       throw new AuthInvalidCredentialsException();
     }
-    const email = user.email?.trim();
-    if (!email) {
-      throw new AuthInvalidCredentialsException();
-    }
-    return email.toLowerCase();
+    return user.email?.trim() ?? "";
   }
 
   /**
@@ -110,7 +101,8 @@ export class UsersService {
       ? normalizePhoneDigitsForCompare(phoneClaim)
       : null;
 
-    const candidates = await this.usersRepo.findAllWithFirebaseIdNullWithRoles();
+    const candidates =
+      await this.usersRepo.findAllWithFirebaseIdNullWithRoles();
 
     for (const u of candidates) {
       const phoneMatch =
@@ -138,7 +130,7 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
-    const username = dto.username.trim();
+    const username = dto.email.trim();
     const phone = dto.phone.trim();
     if (await this.usersRepo.existsUsername(username)) {
       throw new UserUsernameDuplicateException();
@@ -148,20 +140,23 @@ export class UsersService {
     }
 
     // register new user to firebase with email and password is phone
-    const firebaseId = await this.firebaseService.createUser(phone, dto.email ?? '', phone);
+    const firebaseId = await this.firebaseService.createUser(
+      phone,
+      dto.email ?? "",
+      phone,
+    );
     const user = this.usersRepo.create({
-      username,
       phone,
       firebaseId,
       email: dto.email ?? null,
-      fullName: dto.fullName ?? null,
+      firstName: dto.firstName ?? null,
+      lastName: dto.lastName ?? null,
       status: UserStatus.ACTIVE,
       avatarUrl: null,
       dob: null,
     });
 
     await this.usersRepo.save(user);
-
 
     const full = await this.usersRepo.findByIdWithRoles(user.id);
     return UserResponseDto.fromEntity(full!);
@@ -192,8 +187,8 @@ export class UsersService {
     if (!user) {
       throw new UserNotFoundException();
     }
-    if (dto.email !== undefined) user.email = dto.email;
-    if (dto.fullName !== undefined) user.fullName = dto.fullName;
+    if (dto.firstName !== undefined) user.firstName = dto.firstName;
+    if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.avatarUrl !== undefined) user.avatarUrl = dto.avatarUrl;
     if (dto.dob !== undefined) user.dob = dto.dob;
     await this.usersRepo.save(user);
@@ -207,11 +202,12 @@ export class UsersService {
       throw new UserNotFoundException();
     }
     if (dto.email !== undefined) user.email = dto.email;
-    if (dto.fullName !== undefined) user.fullName = dto.fullName;
+    if (dto.firstName !== undefined) user.firstName = dto.firstName;
+    if (dto.lastName !== undefined) user.lastName = dto.lastName;
     if (dto.status !== undefined) user.status = dto.status;
     if (dto.firebaseId !== undefined) {
       const fid =
-        dto.firebaseId === null || dto.firebaseId === ''
+        dto.firebaseId === null || dto.firebaseId === ""
           ? null
           : dto.firebaseId.trim();
       if (fid && (await this.usersRepo.existsFirebaseId(fid, id))) {
@@ -224,7 +220,7 @@ export class UsersService {
     return UserResponseDto.fromEntity(full!);
   }
 
-  async   assignRoles(
+  async assignRoles(
     id: string,
     dto: AssignUserRolesDto,
   ): Promise<UserResponseDto> {

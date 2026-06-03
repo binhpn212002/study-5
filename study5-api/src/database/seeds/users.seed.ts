@@ -4,27 +4,27 @@ import { User } from '../entities/user.entity';
 import { createOrGetFirebaseUidByPhone } from './firebase-auth.seed-helper';
 
 type SeedUserDef = {
-  username: string;
   phone: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   role: string;
   email: string;
 };
 
 const SEED_USERS: SeedUserDef[] = [
   {
-    username: 'admin@gmail.com',
-    phone: '0900000001',
-    fullName: 'Quản trị viên',
+    phone: "0900000001",
     role: UserRole.ADMIN,
-    email: 'admin@gmail.com',
+    email: "admin@gmail.com",
+    firstName: "Quản trị viên",
+    lastName: "Quản trị viên",
   },
   {
-    username: 'warehouse@gmail.com',
-    phone: '0900000002',
-    fullName: 'Nhân viên kho',
+    phone: "0900000002",
+    firstName: "Nhân viên kho",
+    lastName: "Nhân viên kho",
     role: UserRole.USER,
-    email: 'warehouse@gmail.com',
+    email: "warehouse@gmail.com",
   },
 ];
 
@@ -33,17 +33,18 @@ const SEED_USERS: SeedUserDef[] = [
  */
 async function resolveFirebaseUidForSeed(def: SeedUserDef): Promise<string> {
   console.log(
-    `[seed] Gọi Firebase Auth (create/get theo SĐT) → lấy firebase_id cho ${def.username}`,
+    `[seed] Gọi Firebase Auth (create/get theo SĐT) → lấy firebase_id cho ${def.email}`,
   );
   const uid = await createOrGetFirebaseUidByPhone(
     def.phone,
-    def.fullName,
+    def.firstName,
+    def.lastName,
     def.email,
   );
   if (!uid) {
     throw new Error(
-      `[seed] Không lấy được Firebase uid cho ${def.username}: cấu hình FIREBASE_SERVICE_ACCOUNT_JSON_FILE, ` +
-        'FIREBASE_SERVICE_ACCOUNT_JSON_B64 hoặc FIREBASE_SERVICE_ACCOUNT_JSON; bật Phone provider trên Firebase Console.',
+      `[seed] Không lấy được Firebase uid cho ${def.email}: cấu hình FIREBASE_SERVICE_ACCOUNT_JSON_FILE, ` +
+        "FIREBASE_SERVICE_ACCOUNT_JSON_B64 hoặc FIREBASE_SERVICE_ACCOUNT_JSON; bật Phone provider trên Firebase Console.",
     );
   }
   return uid;
@@ -59,7 +60,7 @@ export async function seedUsers(dataSource: DataSource): Promise<void> {
 
   for (const def of SEED_USERS) {
     const exists = await userRepo.findOne({
-      where: [{ username: def.username }, { phone: def.phone }],
+      where: [{ email: def.email }, { phone: def.phone }],
     });
     if (exists) {
       continue;
@@ -72,18 +73,18 @@ export async function seedUsers(dataSource: DataSource): Promise<void> {
     });
     if (uidTaken) {
       console.warn(
-        `[seed] firebase_id ${firebaseUid} đã gán cho ${uidTaken.username} — bỏ qua ${def.username}`,
+        `[seed] firebase_id ${firebaseUid} đã gán cho ${uidTaken.email} — bỏ qua ${def.email}`,
       );
       continue;
     }
 
     const user = userRepo.create({
-      username: def.username,
+      email: def.email,
       phone: def.phone,
       firebaseId: firebaseUid,
-      fullName: def.fullName,
+      firstName: def.firstName,
+      lastName: def.lastName,
       status: UserStatus.ACTIVE,
-      email: null,
       avatarUrl: null,
       dob: null,
     });

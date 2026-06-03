@@ -3,7 +3,7 @@ import {
   Logger,
   OnModuleInit,
   ServiceUnavailableException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { ERROR_MESSAGE, ErrorCode } from '../../../common/constants/error-code.constant';
@@ -17,25 +17,27 @@ export class FirebaseAdminService implements OnModuleInit {
   constructor(private readonly config: ConfigService) {}
 
   onModuleInit(): void {
-    const webKey = this.config.get<string>('firebase.webApiKey')?.trim();
+    const webKey = this.config.get<string>("firebase.webApiKey")?.trim();
     if (!webKey) {
       this.logger.warn(
-        'FIREBASE_WEB_API_KEY not set — POST /auth/login (username/password) will return 503',
+        "FIREBASE_WEB_API_KEY not set — POST /auth/login (username/password) will return 503",
       );
     }
     if (admin.apps.length) {
       return;
     }
-    const json = this.config.get<string>('firebase.serviceAccountJson')?.trim();
+    const json = this.config.get<string>("firebase.serviceAccountJson")?.trim();
     if (!json) {
       this.logger.warn(
-        'FIREBASE_SERVICE_ACCOUNT_JSON not set — POST /auth/firebase will return 503',
+        "FIREBASE_SERVICE_ACCOUNT_JSON not set — POST /auth/firebase will return 503",
       );
       return;
     }
     try {
       admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(json) as admin.ServiceAccount),
+        credential: admin.credential.cert(
+          JSON.parse(json) as admin.ServiceAccount,
+        ),
       });
     } catch (e) {
       this.logger.error(
@@ -70,11 +72,8 @@ export class FirebaseAdminService implements OnModuleInit {
    * Firebase Auth REST — Email/Password (Identity Toolkit).
    * Cần `FIREBASE_WEB_API_KEY` (Console → Project settings → General → Web API Key).
    */
-  async signInWithEmailAndPassword(
-    email: string,
-    password: string,
-  ) {
-    const apiKey = this.config.get<string>('firebase.webApiKey')?.trim();
+  async signInWithEmailAndPassword(email: string, password: string) {
+    const apiKey = this.config.get<string>("firebase.webApiKey")?.trim();
     if (!apiKey) {
       throw new ServiceUnavailableException({
         code: ErrorCode.AUTH_FIREBASE_NOT_CONFIGURED,
@@ -83,23 +82,58 @@ export class FirebaseAdminService implements OnModuleInit {
     }
     const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`;
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email.trim().toLowerCase(),
         password,
         returnSecureToken: true,
       }),
     });
-    
+
     if (!res.ok) {
       throw new AuthInvalidCredentialsException();
     }
     return await res.json();
   }
 
+  async refreshToken(refreshToken: string) {
+    this.assertConfigured();
+    const apiKey = this.config.get<string>("firebase.webApiKey")?.trim();
+    if (!apiKey) {
+      throw new ServiceUnavailableException({
+        code: ErrorCode.AUTH_FIREBASE_NOT_CONFIGURED,
+        message: ERROR_MESSAGE[ErrorCode.AUTH_FIREBASE_NOT_CONFIGURED],
+      });
+    }
+    const url = `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(apiKey)}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new AuthInvalidCredentialsException();
+    }
+    const data = await res.json();
+    console.log("data", data);
+    return {
+      accessToken: data.id_token ?? "",
+      refreshToken: data.refresh_token ?? "",
+    };
+  }
+
   // register new user to firebase with email and password is phone
-  async createUser(phone: string, email: string, password: string): Promise<string> {
+  async createUser(
+    phone: string,
+    email: string,
+    password: string,
+  ): Promise<string> {
     this.assertConfigured();
     const phoneE164 = toE164VN(phone);
     const user = await admin.auth().createUser({

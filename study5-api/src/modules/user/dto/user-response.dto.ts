@@ -7,7 +7,10 @@ export class UserResponseDto {
   id: string;
 
   @ApiProperty()
-  username: string;
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
 
   @ApiProperty()
   phone: string;
@@ -39,10 +42,10 @@ export class UserResponseDto {
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
-    dto.username = user.username;
     dto.phone = user.phone;
     dto.email = user.email;
-    dto.fullName = user.fullName;
+    dto.firstName = user.firstName;
+    dto.lastName = user.lastName;
     dto.avatarUrl = user.avatarUrl;
     dto.dob = user.dob;
     dto.status = user.status as UserStatus;

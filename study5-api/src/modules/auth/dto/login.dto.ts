@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+} from "class-validator";
 
 /**
  * Đăng nhập qua BE: Firebase Auth (Email/Password).
@@ -13,11 +18,10 @@ export class LoginDto {
       "Tên đăng nhập trong WMS hoặc email đăng nhập Firebase (nếu là email)",
     example: "admin@gmail.com",
   })
-  @Transform(({ value }) => (typeof value === "string" ? value.trim() : value))
-  @IsString()
-  @IsNotEmpty()
+  @IsEmail()
   @MaxLength(128)
-  username: string;
+  @IsNotEmpty()
+  email: string;
 
   @ApiProperty({
     description: "Mật khẩu đăng nhập",

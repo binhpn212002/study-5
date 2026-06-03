@@ -25,6 +25,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { UserRole } from "../../common/constants/user.constant";
+import { AuthOptional } from "../../common/decorators/auth-optional.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -75,6 +76,7 @@ export class VocabularyController {
     type: String,
     example: "food",
   })
+  @AuthOptional()
   findAll(
     @Query() query: ListVocabularyQueryDto,
     @CurrentUser() user: AuthUser,

@@ -6,6 +6,20 @@ import { HskLevel, vocabularyQuery, VocabularyResponse } from '@/queries/vocabul
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import FilterBox, { LearnedStatus } from '../components/FilterBox';
+import { SpeakerWaveIcon } from '@/icons';
+
+const speakText = (text: string, onEnd?: () => void) => {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.8;
+    if (onEnd) {
+      utterance.onend = onEnd;
+    }
+    window.speechSynthesis.speak(utterance);
+  }
+};
 
 interface QuizQuestion {
   vocabulary: VocabularyResponse;
@@ -71,6 +85,7 @@ function QuizPage() {
   const [correctIds, setCorrectIds] = useState<string[]>([]);
   const [pageResult, setPageResult] = useState<PageResult | null>(null);
   const [allPageResults, setAllPageResults] = useState<PageResult[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const { data: vocabulary, isLoading, isFetching } = useQuery({
     queryKey: ['vocabulary-quiz', selectedLevel || undefined, learnedStatus || undefined, currentPage],
@@ -113,6 +128,16 @@ function QuizPage() {
   const totalItems = vocabulary?.total || 0;
   const totalPages = vocabulary?.totalPages || 1;
   const progressPercent = totalQuestions > 0 ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
+
+  // Auto play pronunciation when moving to a new question
+  useEffect(() => {
+    if (currentQuestion && !isAnswered) {
+      const timer = setTimeout(() => {
+        speakText(currentQuestion.vocabulary.chinese);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, currentQuestion, isAnswered]);
 
   const handleAnswer = useCallback(
     (index: number) => {
@@ -447,11 +472,28 @@ function QuizPage() {
                 </div>
               </div>
 
-              {/* Question Card */}
+                {/* Question Card */}
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
                 <div className="text-center mb-8">
-                  <div className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-2">
-                    {currentQuestion.vocabulary.chinese}
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white">
+                      {currentQuestion.vocabulary.chinese}
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (isSpeaking) {
+                          window.speechSynthesis.cancel();
+                          setIsSpeaking(false);
+                        } else {
+                          setIsSpeaking(true);
+                          speakText(currentQuestion.vocabulary.chinese, () => setIsSpeaking(false));
+                        }
+                      }}
+                      className="p-2 rounded-full bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                      title="Nghe phát âm"
+                    >
+                      <SpeakerWaveIcon className={`w-6 h-6 text-blue-500 ${isSpeaking ? 'animate-pulse' : ''}`} />
+                    </button>
                   </div>
                   <div className="text-xl text-blue-500 dark:text-blue-400">
                     {currentQuestion.vocabulary.pinyin}
@@ -493,8 +535,17 @@ function QuizPage() {
                             : 'Sai rồi!'}
                         </div>
                         <div className="text-gray-600 dark:text-gray-300 mt-1">
-                          {currentQuestion.vocabulary.chinese} -{' '}
-                          {currentQuestion.vocabulary.vietnameseMeaning}
+                          <span className="flex items-center gap-2">
+                            <span>{currentQuestion.vocabulary.chinese}</span>
+                            <button
+                              onClick={() => speakText(currentQuestion.vocabulary.chinese)}
+                              className="inline-flex items-center p-1 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
+                              title="Nghe phát âm"
+                            >
+                              <SpeakerWaveIcon className="w-4 h-4 text-blue-500" />
+                            </button>
+                            <span>- {currentQuestion.vocabulary.vietnameseMeaning}</span>
+                          </span>
                           {currentQuestion.vocabulary.exampleSentence && (
                             <span className="block text-sm mt-1 italic text-gray-500 dark:text-gray-400">
                               VD: {currentQuestion.vocabulary.exampleSentence}

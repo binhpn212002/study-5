@@ -5,6 +5,8 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import { api } from "@/lib/axios";
+import { auth } from "@/lib/firebase";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,6 +37,26 @@ export default function SignInForm() {
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
+  };
+
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+
+    const result = await signInWithPopup(auth, provider);
+    
+    console.log("result", result);
+    const idToken = await result.user.getIdToken();
+    api.post("/auth/google", { idToken }).then((res) => {
+      
+      if (res.status === 200) {
+        console.log("res", res.data);
+        const token = res.data.accessToken;
+        localStorage.setItem("access_token", token);
+        localStorage.setItem("refresh_token", res.data.refrseshToken);
+        localStorage.setItem("isLoggedIn", "true");
+        router.push("/");
+      }
+    });
   };
 
   return (
@@ -110,7 +132,7 @@ export default function SignInForm() {
               </div>
             </form>
             <div className="mt-5 flex flex-col gap-3"> 
-            <button type="button" className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
+            <button onClick={handleGoogleLogin} type="button" className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
                   width="20"
                   height="20"

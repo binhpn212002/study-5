@@ -23,6 +23,7 @@
     "apexcharts": "^4.7.0",
     "autoprefixer": "^10.4.22",
     "axios": "^1.16.1",
+    "firebase": "^12.14.0",
     "flatpickr": "^4.6.13",
     "lucide-react": "^1.17.0",
     "next": "^16.1.6",

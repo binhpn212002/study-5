@@ -23,9 +23,6 @@ export class SentenceResponseDto {
   @ApiProperty({ description: 'HSK level', enum: HskLevel })
   level: HskLevel;
 
-  @ApiProperty({ description: 'Order index' })
-  orderIndex: number;
-
   @ApiProperty({ description: 'Created timestamp' })
   createdAt: Date;
 

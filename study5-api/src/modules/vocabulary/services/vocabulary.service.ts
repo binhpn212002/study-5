@@ -3,9 +3,10 @@ import { Injectable } from "@nestjs/common";
 import { Queue } from "bull";
 import { parse } from "csv-parse/sync";
 import {
-  HskLevel,
-  VOCABULARY_QUEUE_IMPORT,
-} from "../../../common/constants/vocabulary.constant";
+  IMPORT_TYPE_VOCABULARY,
+  QUEUE_IMPORT,
+} from "../../../common/constants/hsk.constant";
+import { HskLevel } from "../../../common/constants/vocabulary.constant";
 import { ListResponseDto } from "../../../common/dto/list-response.dto";
 import { PageOptionDto } from "../../../common/dto/page-option.dto";
 import {
@@ -45,7 +46,7 @@ export interface CsvValidationResult {
 export class VocabularyService {
   constructor(
     private readonly vocabularyRepository: VocabularyRepository,
-    @InjectQueue(VOCABULARY_QUEUE_IMPORT)
+    @InjectQueue(QUEUE_IMPORT)
     private readonly vocabularyQueue: Queue,
   ) {}
 
@@ -181,8 +182,9 @@ export class VocabularyService {
       skip_empty_lines: true,
       trim: true,
     });
-    const job = await this.vocabularyQueue.add(VOCABULARY_QUEUE_IMPORT, {
+    const job = await this.vocabularyQueue.add(QUEUE_IMPORT, {
       rows: records,
+      type: IMPORT_TYPE_VOCABULARY,
     });
 
     return { jobId: job.id as number, total: records.length, skipped: 0 };

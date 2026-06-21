@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { IsNull, Repository, SelectQueryBuilder } from "typeorm";
 import { HskLevel } from '../../../common/constants/vocabulary.constant';
 import { PageOptionDto, SortOrder } from '../../../common/dto/page-option.dto';
 import { BaseRepository } from '../../../common/repositories/base.repository';
@@ -24,13 +24,12 @@ export class SentenceRepository extends BaseRepository<LongSentence> {
     pageOptions: PageOptionDto,
     options?: SentenceQueryOptions,
   ): Promise<{ items: LongSentence[]; total: number }> {
-    const qb = this.createQueryBuilder('sentence');
+    const qb = this.createQueryBuilder("sentence");
 
     this.applyFilters(qb, options);
 
-    const sortColumn = 'orderIndex';
-    const sortDirection = pageOptions.sort === SortOrder.DESC ? 'DESC' : 'ASC';
-    qb.orderBy(`sentence.${sortColumn}`, sortDirection);
+    const sortDirection = pageOptions.sort === SortOrder.DESC ? "DESC" : "ASC";
+    qb.orderBy("sentence.createdAt", sortDirection);
 
     const [items, total] = await qb
       .skip(pageOptions.skip)
@@ -58,9 +57,9 @@ export class SentenceRepository extends BaseRepository<LongSentence> {
 
   async findMaxOrderIndex(level: HskLevel): Promise<number> {
     const result = await this.repository
-      .createQueryBuilder('sentence')
-      .select('MAX(sentence.order_index)', 'maxOrder')
-      .where('sentence.level = :level', { level })
+      .createQueryBuilder("sentence")
+      .select("MAX(sentence.order_index)", "maxOrder")
+      .where("sentence.level = :level", { level })
       .getRawOne();
     return result?.maxOrder ?? 0;
   }
@@ -75,7 +74,7 @@ export class SentenceRepository extends BaseRepository<LongSentence> {
   ): void {
     if (!options) return;
 
-    qb.andWhere('sentence.deleted_at IS NULL');
+    qb.andWhere("sentence.deleted_at IS NULL");
 
     if (options.q) {
       const searchTerm = `%${options.q}%`;
@@ -86,7 +85,14 @@ export class SentenceRepository extends BaseRepository<LongSentence> {
     }
 
     if (options.level) {
-      qb.andWhere('sentence.level = :level', { level: options.level });
+      qb.andWhere("sentence.level = :level", { level: options.level });
     }
+  }
+
+  async findByVietnamese(vietnamese: string): Promise<LongSentence | null> {
+    return this.findOneBy({
+      vietnamese,
+      deletedAt: IsNull(),
+    });
   }
 }

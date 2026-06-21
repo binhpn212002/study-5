@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { UserRole } from "../../common/constants/user.constant";
+import { Public } from "../../common/decorators/public.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { CreateSentenceDto } from "./dto/create-sentence.dto";
 import { DetailSentenceParamDto } from "./dto/detail-sentence-param.dto";
@@ -44,6 +45,7 @@ export class SentenceController {
   }
 
   @Get()
+  @Public()
   @ApiOperation({ summary: "Get all sentences with pagination" })
   findAll(@Query() query: ListSentenceQueryDto) {
     return this.sentenceService.findAll(query);

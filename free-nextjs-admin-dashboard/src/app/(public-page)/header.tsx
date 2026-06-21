@@ -15,7 +15,7 @@ const menuItems = [
   },
   {
     label: 'Dịch câu',
-    href: '/translate-sentence',
+    href: '/sentence',
   },
   {
     label: 'Ôn tập',
